@@ -1,1 +1,11 @@
 backend/credentials.json
+backend/_*
+google-credentials.json
+install/*
+interface/node_modules/
+log/
+txt_files/
+venv/
+build/*
+src/py_pubsub/resources/prompts_*
+
