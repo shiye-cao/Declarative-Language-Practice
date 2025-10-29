@@ -9,7 +9,7 @@ const SetUp = () => {
   const handleSave = () => {
     localStorage.setItem('condition', condition);
     localStorage.setItem('participantId', participantId);
-    alert('Settings saved successfully!');
+    alert('Hello Grace Wang!');
   };
 
   const handleClearSettings = () => {
