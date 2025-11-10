@@ -9,6 +9,7 @@ import Experimental from './components/pages/Experimental'
 import TaskIntroduction from './components/pages/TaskIntroduction'
 import InitialPromptAssistant from './components/pages/InitialPromptAssistant'
 import InterfaceIntroduction from './components/pages/InterfaceIntroduction'
+import Feedback from './components/pages/Feedback'
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
       <Route path='/experimental' element={<Experimental />}/>
       <Route path='/poststudy' element={<PostStudyQuestionnaire/>}/>
       <Route path='/compensation' element={<Compensation/>}/>
+      <Route path="/feedback" element={<Feedback />} />
     </Routes>
     </>
   )
