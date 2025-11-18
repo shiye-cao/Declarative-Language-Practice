@@ -1,5 +1,35 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import FeedbackPrompt from '../FeedbackPrompt'
+
+  const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  //const feedbackProcessed = userFeedback.trim().length > 0;
+
+  const handleGenerateScenarioPrompt = async () => {
+    // logButtonClick("generatePrompt");
+    // if (!feedbackProcessed) {
+    //   setGeneratedPrompt("");
+    //   return;
+    // }
+    setIsGenerating(true);
+    try {
+      const res = await fetch("http://localhost:8000/generate-scenario-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ }),
+      });
+      if (!res.ok) throw new Error("Failed to generate prompt");
+      const data = await res.json();
+      setGeneratedPrompt(data.aiPrompt || "");
+    } catch (err) {
+      setGeneratedPrompt("");
+      alert("Failed to generate AI prompt.");
+      console.error(err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
 const RobotInteraction: React.FC = () => {
   const navigate = useNavigate()
@@ -7,6 +37,7 @@ const RobotInteraction: React.FC = () => {
   const [showGenerator, setShowGenerator] = useState<boolean>(false)
   const [generatorInput, setGeneratorInput] = useState<string>('')
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
+  
 
   const scenarioDescriptions: Record<number, string> = {
     1: 'Scenario 1: The school bus is coming in 10 minutes. Sam’s backpack is still unpacked. The books are sitting on the table, along with Sam’s lunchbox. Sam also needs to put on his/her shoes and jacket before you both walk out to the bus stop.',
@@ -125,8 +156,9 @@ const RobotInteraction: React.FC = () => {
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
+                      handleGenerateScenarioPrompt();
                       // Hard-coded generation result for now
-                      setGeneratedPrompt('It’s early Saturday morning, and you and Sam are in the kitchen getting ready to bake cookies together. The sun is shining through the window, and you can hear birds chirping outside. The counters are all clean, and all the ingredients—flour, sugar, eggs, butter, chocolate chips—are laid out in front of you. Sam has been looking forward to this because they love chocolate chip cookies, and you want to make sure everything goes smoothly so Sam stays calm and happy during the activity. You notice Sam is quietly watching you measure the flour.')
+                      //setGeneratedPrompt('It’s early Saturday morning, and you and Sam are in the kitchen getting ready to bake cookies together. The sun is shining through the window, and you can hear birds chirping outside. The counters are all clean, and all the ingredients—flour, sugar, eggs, butter, chocolate chips—are laid out in front of you. Sam has been looking forward to this because they love chocolate chip cookies, and you want to make sure everything goes smoothly so Sam stays calm and happy during the activity. You notice Sam is quietly watching you measure the flour.')
                     }}
                     className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition text-sm"
                     aria-label="Generate prompt"

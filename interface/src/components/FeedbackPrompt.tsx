@@ -51,6 +51,31 @@ const FeedbackPrompt = ({
     }
   };
 
+  const handleGenerateScenarioPrompt = async () => {
+    logButtonClick("generatePrompt");
+    if (!feedbackProcessed) {
+      setGeneratedPrompt("");
+      return;
+    }
+    setIsGenerating(true);
+    try {
+      const res = await fetch("http://localhost:8000/generate-scenario-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userFeedback }),
+      });
+      if (!res.ok) throw new Error("Failed to generate prompt");
+      const data = await res.json();
+      setGeneratedPrompt(data.aiPrompt || "");
+    } catch (err) {
+      setGeneratedPrompt("");
+      alert("Failed to generate AI prompt.");
+      console.error(err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleSavePrompt = async () => {
     onGeneratedPrompt(generatedPrompt);
     onSavePrompt();
