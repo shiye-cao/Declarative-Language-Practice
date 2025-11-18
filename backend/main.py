@@ -939,10 +939,50 @@ async def generate_ai_prompt(data: dict = Body(...)):
         print("OpenAI error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
+# @app.post("/generate-scenario-prompt")
+# async def generate_scenario_prompt(data: dict = Body(...)):
+#     editableSuggestions = data.get("editableSuggestions", "")
+#     # Get latest prompt and append to editableSuggestions
+#     resource_dir = os.path.join(BASE_DIR, "../src/py_pubsub/resources")
+#     try:
+#         prompt_files = sorted(
+#             glob.glob(os.path.join(resource_dir, "prompts_*.json")),
+#             key=os.path.getmtime,
+#             reverse=True
+#         )
+#         if prompt_files:
+#             with open(prompt_files[0], "r", encoding="utf-8") as f:
+#                 prompt_data = json.load(f)
+#             # Use the baseline prompt if available, else the whole dict as string
+#             latest_prompt = prompt_data.get("baseline") or json.dumps(prompt_data)
+#         else:
+#             latest_prompt = ""
+#     except Exception as e:
+#         latest_prompt = ""
+
+#     try:
+#         client = openai.OpenAI(api_key=OPENAI_API_KEY)
+#         response = client.chat.completions.create(
+#             model="gpt-4o-mini-2024-07-18",
+#             messages=[
+#                 {"role": "system", "content": "You're trying to coach a parent of a child with autism, Sam, on how to speak to Sam effectively using declarative language by giving them detailed scenarios. In these scenarios, we want to give enough details and describe the setting (place, time, people) enough for Sam's parent to be able to engage in conversation with enough context. We have many prompts already generated, but also need to generate more prompts that allow the parent to practice talking with Sam. If given an overarching idea, dive into more detail and create a comprehensive prompt. If not given any extra information or given information that is nonsense or unrelated to a scenario, generate a new scenario that is realistic for a 6-year old child and their parent. Do not give any other information, only provide the prompt. At the end of describing the setting, give Sam's parent the space to say something to Sam. That way, they can begin the conversation. Do not suggest something for the parent to say."},
+#                 {"role": "user", "content": editableSuggestions + ("\n" + latest_prompt if latest_prompt else "")}
+#             ],
+#             max_tokens=2500,
+#             temperature=0.7,
+#         )
+#         ai_prompt = response.choices[0].message.content.strip()
+#         return {"aiPrompt": ai_prompt}
+#     except Exception as e:
+#         print("OpenAI error:", e)
+#         raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/generate-scenario-prompt")
 async def generate_scenario_prompt(data: dict = Body(...)):
-    editableSuggestions = data.get("editableSuggestions", "")
-    # Get latest prompt and append to editableSuggestions
+    # Get the user input from frontend
+    user_prompt = data.get("userPrompt", "").strip()
+
+    # Load latest baseline prompt from resources
     resource_dir = os.path.join(BASE_DIR, "../src/py_pubsub/resources")
     try:
         prompt_files = sorted(
@@ -953,26 +993,45 @@ async def generate_scenario_prompt(data: dict = Body(...)):
         if prompt_files:
             with open(prompt_files[0], "r", encoding="utf-8") as f:
                 prompt_data = json.load(f)
-            # Use the baseline prompt if available, else the whole dict as string
             latest_prompt = prompt_data.get("baseline") or json.dumps(prompt_data)
         else:
             latest_prompt = ""
     except Exception as e:
         latest_prompt = ""
 
+    # Combine user input with latest prompt
+    combined_prompt = user_prompt + ("\n" + latest_prompt if latest_prompt else "")
+
     try:
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
         response = client.chat.completions.create(
             model="gpt-4o-mini-2024-07-18",
             messages=[
-                {"role": "system", "content": "You're trying to coach a parent of a child with autism, Sam, on how to speak to Sam effectively using declarative language by giving them detailed scenarios. In these scenarios, we want to give enough details and describe the setting (place, time, people) enough for Sam's parent to be able to engage in conversation with enough context. We have many prompts already generated, but also need to generate more prompts that allow the parent to practice talking with Sam. If given an overarching idea, dive into more detail and create a comprehensive prompt. If not given any extra information, generate a new scenario that is realistic for a 6-year old child and their parent. Do not give any other information, only provide the prompt. At the end of describing the setting, give Sam's parent the space to say something to Sam. That way, they can begin the conversation."},
-                {"role": "user", "content": editableSuggestions + ("\n" + latest_prompt if latest_prompt else "")}
+                {
+                    "role": "system",
+                    "content": (
+                        "You're trying to coach a parent of a child with autism, Sam, "
+                        "on how to speak to Sam effectively using declarative language by giving them detailed scenarios. "
+                        "In these scenarios, give enough details and describe the setting (place, time, people) so Sam's parent "
+                        "can engage in conversation with enough context. We have many prompts already generated, but also need to "
+                        "generate more prompts that allow the parent to practice talking with Sam. "
+                        "If given an overarching idea, dive into more detail and create a comprehensive prompt. "
+                        "If not given any extra information or given information that is nonsense or unrelated to a scenario, "
+                        "generate a new scenario that is realistic for a 6-year old child and their parent. "
+                        "Do not give any other information, only provide the prompt. "
+                        "At the end of describing the setting, give Sam's parent the space to say something to Sam. "
+                        "That way, they can begin the conversation. Do not suggest something for the parent to say."
+                    ),
+                },
+                {"role": "user", "content": combined_prompt}
             ],
             max_tokens=2500,
             temperature=0.7,
         )
+
         ai_prompt = response.choices[0].message.content.strip()
         return {"aiPrompt": ai_prompt}
+
     except Exception as e:
         print("OpenAI error:", e)
         raise HTTPException(status_code=500, detail=str(e))
