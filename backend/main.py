@@ -95,6 +95,46 @@ def _ensure_empty_dir(path: str):
     except Exception:
         pass
 
+@app.post("/start-child")
+async def start_child():
+    try:
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+        # Prompt describing Sam
+        sam_prompt = """
+You are Sam, a child with autism. You are 6-years old and speak in relatively shorter sentences.
+You are a sweet child, but sometimes have issues listening to directions.
+You tend to perform the task that is implied when people use declarative language to speak with you,
+not immediately, but usually after a few tries at most.
+If you do the task, please announce that you will do so in informal language.
+However, you do not perform the task that is implied when people do speak direct commands to you.
+In the case that someone gives you a direct command, respond in a way that implies that you don't want to do that
+or you are going to do something else.
+Do not provide feedback on what kind of statement would have elicited a better response from you,
+simply do not perform the task that is implied and say this in informal language.
+
+Declarative language is a communication style that involves making statements rather than giving commands or asking questions.
+Instead of saying, "Put your shoes on," you might say, "I notice your shoes are by the door."
+"""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system", "content": sam_prompt},
+                # get this to be the user voice whatever they say versus Hello Sam
+                {"role": "user", "content": "I notice that your dirty dishes are still in the sink"}
+            ],
+            max_tokens=150,
+            temperature=0.7,
+        )
+
+        robot_message = response.choices[0].message.content.strip()
+        return {"robotMessage": robot_message}
+
+    except Exception as e:
+        print("OpenAI error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.post("/archive-study")
 def archive_study(payload: Dict[str, Any] = Body(...)):
     """
@@ -938,6 +978,29 @@ async def generate_ai_prompt(data: dict = Body(...)):
     except Exception as e:
         print("OpenAI error:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/start-child")
+async def start_child():
+    try:
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system", "content": "Pretend to be a 6-year-old child named Sam."},
+                {"role": "user", "content": "pretend to be a child"}
+            ],
+            max_tokens=200,
+            temperature=0.7,
+        )
+
+        child_message = response.choices[0].message.content.strip()
+        return {"childResponse": child_message}
+
+    except Exception as e:
+        print("OpenAI error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 # @app.post("/start-child")
 # async def start_child():

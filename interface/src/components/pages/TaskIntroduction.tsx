@@ -10,9 +10,13 @@ const RobotInteraction: React.FC = () => {
   const [showGenerator, setShowGenerator] = useState<boolean>(false)
   const [generatorInput, setGeneratorInput] = useState<string>('')
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
+  //const [status, setStatus] = useState("");         // <-- NEW
+  //const [childMessage, setChildMessage] = useState(""); // <-- NEW
   //const [childStatus, setChildStatus] = useState("")
   //const [generatedPrompt, setGeneratedPrompt] = useState("");
   //const [isGenerating, setIsGenerating] = useState(false);
+  const [status, setStatus] = useState("");           // shows "Child listening..."
+  const [robotMessage, setRobotMessage] = useState(""); // shows response from Sam
   
 
   const scenarioDescriptions: Record<number, string> = {
@@ -24,30 +28,28 @@ const RobotInteraction: React.FC = () => {
     setSelectedScenario(prev => (prev === n ? null : n))
   }
 
-//   const handleStartLearning = async () => {
-//   try {
-//     setChildStatus("Child listening...");
+    const handleStartLearning = async () => {
+    // Step 1: show "Child listening..." immediately
+    setStatus("Child listening...");
 
-//     const res = await fetch("http://localhost:8000/start-child", {
-//       method: "POST",
-//       headers: { "Content-Type": "application/json" },
-//       body: JSON.stringify({}),
-//     });
+    try {
+      // Step 2: call backend to initialize robot
+      const res = await fetch("http://localhost:8000/start-child", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
 
-//     if (!res.ok) throw new Error("Failed to start child mode");
-//     const data = await res.json();
+      if (!res.ok) throw new Error("Failed to start learning");
 
-//     // Optional: show child’s first response
-//     if (data.childResponse) {
-//       setChildStatus(`Child listening: "${data.childResponse}"`);
-//     }
-//   } catch (err) {
-//     console.error(err);
-//     alert("Error starting child mode");
-//     setChildStatus("");
-//   }
-// };
+      const data = await res.json();
+      setRobotMessage(data.robotMessage || "");
+      setStatus(""); // remove "Child listening" if you want
 
+    } catch (err) {
+      console.error(err);
+      setStatus("Failed to connect with Sam.");
+    }
+  };
 
     const handleGenerateScenarioPrompt = async () => {
 
@@ -225,11 +227,17 @@ const RobotInteraction: React.FC = () => {
             {/* Bottom: Learning Buttons */}
       <div className="flex justify-center gap-4 mt-auto">
         <button
-          //onClick={handleStartLearning}
+          onClick={handleStartLearning}
           className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
         >
           Start Learning
         </button>
+        {status && <p className="text-green-600 font-semibold">{status}</p>}
+        {robotMessage && (
+        <div className="mt-3 p-3 border rounded bg-gray-100">
+          <p>{robotMessage}</p>
+        </div>
+      )}
         <button
           onClick={() => navigate('/feedback')}
           className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
