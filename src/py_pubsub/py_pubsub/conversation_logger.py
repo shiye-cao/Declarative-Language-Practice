@@ -20,7 +20,7 @@ class EventType(Enum):
 class ConversationLogger:
     """Thread-safe logger for conversation events with structured format."""
     
-    def __init__(self, log_directory: str = "/home/icl/2026-hri-conversation-design-experimental/txt_files/", 
+    def __init__(self, log_directory: str = "/home/icl/2025-declarative-language/txt_files/", 
                  session_id: Optional[str] = None):
         self.log_directory = Path(log_directory + "logs")
         self.log_directory.mkdir(parents=True, exist_ok=True)
@@ -271,7 +271,7 @@ _conversation_logger = None
 _logger_lock = threading.Lock()
 
 
-def get_conversation_logger(log_directory: str = "/home/icl/2026-hri-conversation-design-experimental/txt_files/",
+def get_conversation_logger(log_directory: str = "/home/icl/2025-declarative-language/txt_files/",
                           session_id: Optional[str] = None) -> ConversationLogger:
     """Get or create the global conversation logger instance."""
     global _conversation_logger

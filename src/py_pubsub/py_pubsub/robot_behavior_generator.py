@@ -30,10 +30,9 @@ class RobotBehaviorGenerator(Node):
         # Parameters
         self.declare_parameter('openai_api_key', os.environ.get('OPENAI_API_KEY'))
         self.declare_parameter('openai_api_url', 'https://api.openai.com/v1/chat/completions')
-        self.declare_parameter('prompts_file', '/home/icl/2026-hri-conversation-design-experimental/src/py_pubsub/resources/prompts.json')
-        self.declare_parameter('latest_initial_prompt_file', '/home/icl/2026-hri-conversation-design-experimental/txt_files/initial_prompts/initial_prompt_latest.txt')
-        # self.declare_parameter('prompts_file_latest', '/home/icl/2026-hri-conversation-design-experimental/src/py_pubsub/resources/prompts.json') # 0711
-        self.declare_parameter('resource_dir', '/home/icl/2026-hri-conversation-design-experimental/src/py_pubsub/resources')
+        self.declare_parameter('prompts_file', '/home/icl/2025-declarative-language/src/py_pubsub/resources/prompts.json')
+        self.declare_parameter('latest_initial_prompt_file', '/home/icl/2025-declarative-language/txt_files/initial_prompts/initial_prompt_latest.txt')
+        self.declare_parameter('resource_dir', '/home/icl/2025-declarative-language/src/py_pubsub/resources')
         
         self.api_key = self.get_parameter('openai_api_key').get_parameter_value().string_value
         self.api_url = self.get_parameter('openai_api_url').get_parameter_value().string_value
@@ -132,17 +131,17 @@ class RobotBehaviorGenerator(Node):
             self.get_logger().error(f"Error loading prompts: {str(e)}")
             return {}
         
-    def load_latest_prompts(self):
-        files = [f for f in os.listdir(self.resource_dir) if f.startswith("prompts") and f.endswith(".json")]
-        if not files:
-            self.get_logger().warning("No prompts files found.")
-            return {}
-        files.sort(key=lambda f: os.path.getmtime(os.path.join(self.resource_dir, f)), reverse=True)
-        latest_file = os.path.join(self.resource_dir, files[0])
-        with open(latest_file, "r") as file:
-            prompts = json.load(file)
-            self.get_logger().info(f"Loaded latest prompts: {latest_file}")
-            return prompts
+    # def load_latest_prompts(self):
+    #     files = [f for f in os.listdir(self.resource_dir) if f.startswith("prompts") and f.endswith(".json")]
+    #     if not files:
+    #         self.get_logger().warning("No prompts files found.")
+    #         return {}
+    #     files.sort(key=lambda f: os.path.getmtime(os.path.join(self.resource_dir, f)), reverse=True)
+    #     latest_file = os.path.join(self.resource_dir, files[0])
+    #     with open(latest_file, "r") as file:
+    #         prompts = json.load(file)
+    #         self.get_logger().info(f"Loaded latest prompts: {latest_file}")
+    #         return prompts
         
     # def conversation_start_callback(self, msg): #0711
     #     self.conversation_active = True
@@ -151,13 +150,27 @@ class RobotBehaviorGenerator(Node):
 
     def conversation_start_callback(self, msg):
         self.conversation_active = True
-        self.prompts = self.load_latest_prompts()
+        self.prompt = """
+                        You are Sam, a child with autism. You are 6-years old and speak in relatively shorter sentences.
+                        You are a sweet child, but sometimes have issues listening to directions.
+                        You tend to perform the task that is implied when people use declarative language to speak with you,
+                        not immediately, but usually after a few tries at most.
+                        If you do the task, please announce that you will do so in informal language.
+                        However, you do not perform the task that is implied when people do speak direct commands to you.
+                        In the case that someone gives you a direct command, respond in a way that implies that you don't want to do that
+                        or you are going to do something else.
+                        Do not provide feedback on what kind of statement would have elicited a better response from you,
+                        simply do not perform the task that is implied and say this in informal language.
+
+                        Declarative language is a communication style that involves making statements rather than giving commands or asking questions.
+                        Instead of saying, "Put your shoes on," you might say, "I notice your shoes are by the door."
+                    """
         self.conversation_history = []
         self.prev_robot_speech = ""
         self.get_logger().info("Conversation starts, latest prompts loaded")
 
-        response = self.generate_robot_behavior("start")
-        self.publish_robot_behavior(response)
+        # response = self.generate_robot_behavior("start")
+        # self.publish_robot_behavior(response)
         
     def conversation_end_callback(self, msg):
         """Callback for conversation end event."""
@@ -284,15 +297,10 @@ class RobotBehaviorGenerator(Node):
         if self.conversation_type == "normal":
             # Send thinking status to robot controller 
             self.publish_thinking_status()
-            system_prompt = self.prompts.get("declarative-language-bot", "") + "Always provide a response in valid JSON format. Output Format: You must return a structured JSON object with the following keys: {  \"robotTalk\": \"TRUE\", \"robotBehavior\": [ { \"robotSpeechContent\": \"Segmented speech content here.\", \"robotFacialExpression\": \"neutral | satisfied | happy | surprised | interested | excited\", \"robotHeadOrientation\": \"lookAtUser | nod | doubleNod\" }, ... ], \"robotFullSpeechContent\": \"Complete response content here.\"} \n Rules: 1) Do not include triple backticks (json … ). 2) Always set \"robotTalk\": \"TRUE\" if a response is being delivered. 3) Include at least one entry in the \"robotBehavior\" list for each thinking or speaking segment. 4) The \"robotFullSpeechContent\" must contain the complete speech output, matching the content of all robotSpeechContent values concatenated in order. 5) Each robotBehavior segment must contain: - \"robotSpeechContent\": a portion of Luna’s response. - \"robotFacialExpression\": one of the six allowed expressions based on context. - \"robotHeadOrientation\": one of the three allowed head orientations based on context. \n Facial Expression Options (choose one per segment): \"neutral\", \"satisfied\", \"happy\", \"surprised\", \"interested\", \"excited\". Head Orientation Options (choose one per segment):\"lookAtUser\", \"nod\", \"doubleNod\"."
+            system_prompt = self.prompt + "Always provide a response in valid JSON format. Output Format: You must return a structured JSON object with the following keys: {  \"robotTalk\": \"TRUE\", \"robotBehavior\": [ { \"robotSpeechContent\": \"Segmented speech content here.\", \"robotFacialExpression\": \"neutral | satisfied | happy | surprised | interested | excited\", \"robotHeadOrientation\": \"lookAtUser | nod | doubleNod\" }, ... ], \"robotFullSpeechContent\": \"Complete response content here.\"} \n Rules: 1) Do not include triple backticks (json … ). 2) Always set \"robotTalk\": \"TRUE\" if a response is being delivered. 3) Include at least one entry in the \"robotBehavior\" list for each thinking or speaking segment. 4) The \"robotFullSpeechContent\" must contain the complete speech output, matching the content of all robotSpeechContent values concatenated in order. 5) Each robotBehavior segment must contain: - \"robotSpeechContent\": a portion of Luna’s response. - \"robotFacialExpression\": one of the six allowed expressions based on context. - \"robotHeadOrientation\": one of the three allowed head orientations based on context. \n Facial Expression Options (choose one per segment): \"neutral\", \"satisfied\", \"happy\", \"surprised\", \"interested\", \"excited\". Head Orientation Options (choose one per segment):\"lookAtUser\", \"nod\", \"doubleNod\"."
 
-        model_choose = {
-            "gpt-4o":"gpt-4o-2024-05-13",
-            "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
-            "gpt-4.1-mini": "gpt-4.1-mini-2025-04-14"
-        }
         model_type = self.prompts.get("model", "gpt-4.1-mini")
-        model_to_use = "gpt-4.1-mini-2025-04-14"
+
         temperature = 0.5
 
         self.get_logger().info(f"Model to use: {model_to_use}")

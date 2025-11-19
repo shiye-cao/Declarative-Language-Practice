@@ -51,6 +51,31 @@ const RobotInteraction: React.FC = () => {
     }
   };
 
+
+  const handleEndLearning = async () => {
+    // Step 1: show "Child listening..." immediately
+    setStatus("Child listening...");
+
+    try {
+      // Step 2: call backend to initialize robot
+      const res = await fetch("http://localhost:8000/end-practice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!res.ok) throw new Error("Failed to end practice");
+
+      const data = await res.json();
+      setRobotMessage(data.robotMessage || "");
+      setStatus(""); // remove "Child listening" if you want
+
+    } catch (err) {
+      console.error(err);
+      setStatus("Failed to connect with Sam.");
+    }
+  };
+
+
     const handleGenerateScenarioPrompt = async () => {
 
     try {
@@ -239,7 +264,8 @@ const RobotInteraction: React.FC = () => {
         </div>
       )}
         <button
-          onClick={() => navigate('/feedback')}
+          // onClick={() => navigate('/feedback')}
+          onClick={handleEndLearning}
           className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
         >
           Done Learning
