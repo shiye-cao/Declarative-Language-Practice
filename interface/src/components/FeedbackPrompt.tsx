@@ -20,7 +20,6 @@ const FeedbackPrompt = ({
   userFeedback,
   onUserFeedbackChange,
   logButtonClick,
-  progress,
 }: FeedbackPromptProps) => {
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);

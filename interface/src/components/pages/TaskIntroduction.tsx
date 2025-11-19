@@ -1,8 +1,35 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-//import FeedbackPrompt from '../FeedbackPrompt'
+import FeedbackPrompt from '../FeedbackPrompt'
 
+  const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
   //const feedbackProcessed = userFeedback.trim().length > 0;
+
+  const handleGenerateScenarioPrompt = async () => {
+    // logButtonClick("generatePrompt");
+    // if (!feedbackProcessed) {
+    //   setGeneratedPrompt("");
+    //   return;
+    // }
+    setIsGenerating(true);
+    try {
+      const res = await fetch("http://localhost:8000/generate-scenario-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ }),
+      });
+      if (!res.ok) throw new Error("Failed to generate prompt");
+      const data = await res.json();
+      setGeneratedPrompt(data.aiPrompt || "");
+    } catch (err) {
+      setGeneratedPrompt("");
+      alert("Failed to generate AI prompt.");
+      console.error(err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
 const RobotInteraction: React.FC = () => {
   const navigate = useNavigate()
@@ -148,7 +175,20 @@ const RobotInteraction: React.FC = () => {
             onClick={() => { if (!showGenerator) { setShowGenerator(true); setSelectedScenario(3) } }}
             role="button"
             tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { setShowGenerator(prev => !prev); setSelectedScenario(prev => prev === 3 ? null : 3) } }}
+            onKeyDown={(e: React.KeyboardEvent) => {
+              // Ignore key events that originate from form controls so typing in inputs/textareas
+              // doesn't toggle/close the generator card (spacebar was closing it).
+              const target = e.target as HTMLElement
+              const tag = target.tagName
+              if (tag === 'INPUT' || tag === 'TEXTAREA' || (target && (target as any).isContentEditable)) {
+                return
+              }
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                setShowGenerator(prev => !prev)
+                setSelectedScenario(prev => prev === 3 ? null : 3)
+              }
+            }}
             aria-pressed={showGenerator}
           >
             <div className="flex items-center justify-between">
@@ -177,16 +217,33 @@ const RobotInteraction: React.FC = () => {
 
                 <div className="mt-3 flex items-center gap-3">
                   <button
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation()
-                      handleGenerateScenarioPrompt();
-                      // Hard-coded generation result for now
-                      //setGeneratedPrompt('It’s early Saturday morning, and you and Sam are in the kitchen getting ready to bake cookies together. The sun is shining through the window, and you can hear birds chirping outside. The counters are all clean, and all the ingredients—flour, sugar, eggs, butter, chocolate chips—are laid out in front of you. Sam has been looking forward to this because they love chocolate chip cookies, and you want to make sure everything goes smoothly so Sam stays calm and happy during the activity. You notice Sam is quietly watching you measure the flour.')
+                      setIsGenerating(true)
+                      try {
+                        // The backend expects the user's text in the `editableSuggestions` field.
+                        // Pass the generatorInput so the OpenAI prompt can incorporate the user's description.
+                        const res = await fetch("http://localhost:8000/generate-scenario-prompt", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ editableSuggestions: generatorInput }),
+                        })
+                        if (!res.ok) throw new Error("Failed to generate prompt")
+                        const data = await res.json()
+                        setGeneratedPrompt(data.aiPrompt || "")
+                      } catch (err) {
+                        setGeneratedPrompt("")
+                        alert("Failed to generate AI prompt.")
+                        console.error(err)
+                      } finally {
+                        setIsGenerating(false)
+                      }
                     }}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition text-sm"
+                    className={`px-4 py-2 rounded text-sm transition ${isGenerating ? 'bg-indigo-400 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-700'}`}
                     aria-label="Generate prompt"
+                    disabled={isGenerating}
                   >
-                    Generate
+                    {isGenerating ? 'Generating...' : 'Generate'}
                   </button>
 
                   <button
