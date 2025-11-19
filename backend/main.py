@@ -2,16 +2,20 @@
 Install required packages:
 pip install fastapi uvicorn pydantic
 
+
 Run in mac:
 uvicorn main:app --reload --port 8000
 
+
 Run in ros:
 USE_ROS=true uvicorn main:app --reload --port 8000
+
 
 CURL format:
 curl -X POST http://localhost:8000/update-prompts \
   -H "Content-Type: application/json" \
   -d '{"prompts": {"baseline": "This is a test."}}'
+
 
 """
 import zmq
@@ -26,9 +30,12 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import PlainTextResponse
 
+
 USE_ROS = os.getenv("USE_ROS", "false").lower() == "true"
 
+
 app = FastAPI()
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,28 +45,37 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 STATIC_TXT_DIR = os.path.join(BASE_DIR, "../txt_files")
 os.makedirs(STATIC_TXT_DIR, exist_ok=True)
 
+
 TRANSCRIPT_FOLDER = os.path.join(BASE_DIR, "../txt_files/transcripts")
 os.makedirs(TRANSCRIPT_FOLDER, exist_ok=True)
+
 
 SAVE_FOLDER = os.path.join(BASE_DIR, "../txt_files/analysis_results")
 os.makedirs(SAVE_FOLDER, exist_ok=True)
 
+
 PROMPT_FOLDER = os.path.join(BASE_DIR, "../py")
 app.mount("/txt_files", StaticFiles(directory=STATIC_TXT_DIR), name="txt_files")
+
 
 LOG_FOLDER = os.path.join(BASE_DIR, "../txt_files/logs")
 os.makedirs(LOG_FOLDER, exist_ok=True)
 
+
 HISTORY_FOLDER = os.path.join(BASE_DIR, "../txt_files/history")
 os.makedirs(HISTORY_FOLDER, exist_ok=True)
 
+
 INITIAL_PROMPT_FOLDER = os.path.join(BASE_DIR, "../txt_files/initial_prompts")
 os.makedirs(INITIAL_PROMPT_FOLDER, exist_ok=True)
+
 
 import os
 import shutil
@@ -69,9 +85,12 @@ from typing import Dict, Any, List
 from fastapi import Body
 
 
+
+
 SUBFOLDERS = ["analysis_results", "history", "initial_prompts", "logs", "transcripts"]
 ARCHIVE_ROOT = os.path.join(STATIC_TXT_DIR, "archived")
 os.makedirs(ARCHIVE_ROOT, exist_ok=True)
+
 
 def _unique_archive_batch_dir(pid: str, date_str: str) -> str:
     """
@@ -86,6 +105,7 @@ def _unique_archive_batch_dir(pid: str, date_str: str) -> str:
         n += 1
     return batch_dir
 
+
 def _ensure_empty_dir(path: str):
     os.makedirs(path, exist_ok=True)
     # optional: drop a .gitkeep so empty dirs persist in git
@@ -95,6 +115,7 @@ def _ensure_empty_dir(path: str):
     except Exception:
         pass
 
+
 @app.post("/start-child")
 async def start_child():
     rename_transcript()
@@ -103,14 +124,19 @@ async def start_child():
     socket.bind("tcp://localhost:12345")
     print("Publisher socket bound to tcp://localhost:12345")
 
+
     # message = "conversation started"
     socket.send_string(f"test")
+
 
     time.sleep(0.25)  # Allow time for subscribers to connect
     socket.send_string(f"conversation started;{0};{datetime.now().strftime('%Y%m%d_%H%M%S')}")
     print("Sent message:", "conversation started")
 
+
     return {"status": "success", "detail": "Conversation started"}
+
+
 
 
 @app.post("/end-practice")
@@ -120,8 +146,10 @@ async def end_practice():
     socket.bind("tcp://localhost:12345")
     print("Publisher socket bound to tcp://localhost:12345")
 
+
     # message = "conversation started"
     socket.send_string(f"test")
+
 
     time.sleep(0.25)  # Allow time for subscribers to connect
     socket.send_string("conversation ended")
@@ -129,8 +157,12 @@ async def end_practice():
 
 
 
+
+
+
 #     try:
 #         client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 
 #         # Prompt describing Sam
 #         sam_prompt = """
@@ -145,9 +177,11 @@ async def end_practice():
 # Do not provide feedback on what kind of statement would have elicited a better response from you,
 # simply do not perform the task that is implied and say this in informal language.
 
+
 # Declarative language is a communication style that involves making statements rather than giving commands or asking questions.
 # Instead of saying, "Put your shoes on," you might say, "I notice your shoes are by the door."
 # """
+
 
 #         response = client.chat.completions.create(
 #             model="gpt-4o-mini-2024-07-18",
@@ -160,12 +194,15 @@ async def end_practice():
 #             temperature=0.7,
 #         )
 
+
 #         robot_message = response.choices[0].message.content.strip()
 #         return {"robotMessage": robot_message}
+
 
 #     except Exception as e:
 #         print("OpenAI error:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/archive-study")
 def archive_study(payload: Dict[str, Any] = Body(...)):
@@ -178,15 +215,19 @@ def archive_study(payload: Dict[str, Any] = Body(...)):
     if not pid:
         return {"ok": False, "error": "Missing or invalid 'pid'."}
 
+
     # Use your preferred timezone for dating the archive
     date_str = datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat()
+
 
     # Make a unique batch folder for this archive
     batch_dir = _unique_archive_batch_dir(pid, date_str)
     os.makedirs(batch_dir, exist_ok=True)
 
+
     moved: List[Dict[str, str]] = []
     errors: List[Dict[str, str]] = []
+
 
     # 1) Move subfolders into the archive batch
     for name in SUBFOLDERS:
@@ -204,6 +245,7 @@ def archive_study(payload: Dict[str, Any] = Body(...)):
         except Exception as e:
             errors.append({"folder": src, "error": str(e)})
 
+
     # 2) Recreate clean, empty subfolders for the next study
     recreated: List[str] = []
     for name in SUBFOLDERS:
@@ -213,6 +255,7 @@ def archive_study(payload: Dict[str, Any] = Body(...)):
             recreated.append(fresh)
         except Exception as e:
             errors.append({"folder": fresh, "error": str(e)})
+
 
     return {
         "ok": True,
@@ -226,12 +269,16 @@ def archive_study(payload: Dict[str, Any] = Body(...)):
     }
 
 
+
+
 class PromptPayload(BaseModel):
     prompts: dict  # Should include "baseline", etc.
+
 
 class SaveResultPayload(BaseModel):
     filename: str
     content: str
+
 
 @app.post("/save-analysis")
 def save_analysis(payload: SaveResultPayload):
@@ -239,19 +286,24 @@ def save_analysis(payload: SaveResultPayload):
         # Optional: timestamped to avoid overwrites
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
+
         # Ensure it's a clean filename
         safe_name = os.path.basename(payload.filename)
         if not safe_name.endswith(".txt"):
             safe_name += timestamp + ".txt"
 
+
         full_path = os.path.join(SAVE_FOLDER, f"{safe_name}")
+
 
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(payload.content)
 
+
         return {"status": "success", "saved_to": full_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/save-data")
 def save_data(payload: SaveResultPayload):
@@ -261,14 +313,19 @@ def save_data(payload: SaveResultPayload):
         if not safe_name.endswith(".txt"):
             safe_name += ".txt"
 
+
         full_path = os.path.join(ARCHIVE_ROOT, f"{safe_name}")
+
 
         with open(full_path, "w", encoding="utf-8") as f:
             f.write(payload.content)
 
+
         return {"status": "success", "saved_to": full_path}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @app.get("/latest-transcript", response_class=PlainTextResponse)
@@ -284,6 +341,8 @@ def latest_transcript():
             return f.read()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @app.get("/latest-transcript/stream")
@@ -309,10 +368,13 @@ async def latest_transcript_stream():
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+
+
 @app.post("/rename-transcript")
 def rename_transcript():
     try:
         latest_transcript = os.path.join(TRANSCRIPT_FOLDER, "transcript_latest.txt")
+
 
         if os.path.exists(latest_transcript):
             old_transcript = os.path.join(TRANSCRIPT_FOLDER, f"transcript_old_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
@@ -336,10 +398,12 @@ def inital_prompt():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # New endpoint to save initial prompt
 from pydantic import BaseModel
 class SaveInitialPromptRequest(BaseModel):
     content: str
+
 
 @app.post("/save-initial-prompt")
 def save_initial_prompt(payload: SaveInitialPromptRequest):
@@ -360,8 +424,10 @@ def save_initial_prompt(payload: SaveInitialPromptRequest):
         raise HTTPException(status_code=500, detail=str(e))
     
 
+
 import asyncio
 from fastapi.responses import StreamingResponse
+
 
 # --- add anywhere after INITIAL_PROMPT_FOLDER is defined ---
 @app.get("/initial-prompt/stream")
@@ -387,6 +453,7 @@ async def initial_prompt_stream():
             await asyncio.sleep(1)
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+
 @app.post("/latest-prompt")
 def latest_prompt(payload: PromptPayload):
     try:
@@ -401,7 +468,9 @@ def latest_prompt(payload: PromptPayload):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 from typing import List
+
 
 @app.get("/transcript-history")
 def get_transcript_history(participantId: str):
@@ -434,10 +503,15 @@ def get_transcript_history(participantId: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 import glob
+
 
 class SaveHistoryRequest(BaseModel):
     participantId: str
+
+
 
 
 @app.post("/save-history")
@@ -456,6 +530,7 @@ def save_history(payload: SaveHistoryRequest):
         with open(prompt_files[0], "r", encoding="utf-8") as f:
             prompt_data = json.load(f)
 
+
         # Get latest transcript file
         transcript_files = sorted(
             glob.glob(os.path.join(TRANSCRIPT_FOLDER, "*.txt")),
@@ -466,6 +541,7 @@ def save_history(payload: SaveHistoryRequest):
             raise Exception("No transcript files found.")
         with open(transcript_files[0], "r", encoding="utf-8") as f:
             transcript_content = f.read()
+
 
         # Get latest analysis_result file (annotations)
         analysis_files = sorted(
@@ -482,10 +558,12 @@ def save_history(payload: SaveHistoryRequest):
             except Exception:
                 analysis_content = None
 
+
         # Prepare JSON structure
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         history_filename = f"{participantId}_{timestamp}.json"
         history_path = os.path.join(HISTORY_FOLDER, history_filename)
+
 
         history_json = {
             "participantId": participantId,
@@ -495,12 +573,16 @@ def save_history(payload: SaveHistoryRequest):
             "annotations": analysis_content
         }
 
+
         with open(history_path, "w", encoding="utf-8") as f:
             json.dump(history_json, f, indent=2, ensure_ascii=False)
+
 
         return {"status": "success", "file": history_filename}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @app.post("/start-initial-prompt-conversation")
@@ -520,6 +602,7 @@ def start_initial_prompt_conversation(participantId: str):
         'voice': 'en-US-Chirp-HD-D'
     }
 
+
     try:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"prompts_{timestamp}.json"
@@ -529,23 +612,30 @@ def start_initial_prompt_conversation(participantId: str):
         with open(full_path, "w", encoding="utf-8") as f:
             json.dump(prompts, f, indent=2)
 
+
         context = zmq.Context()
         socket = context.socket(zmq.PUB)
         socket.bind("tcp://localhost:12345")
         print("Publisher socket bound to tcp://localhost:12345")
 
+
         # message = "conversation started"
         socket.send_string(f"test")
+
 
         time.sleep(0.25)  # Allow time for subscribers to connect
         # socket.send_string(f"initial prompt conversation started;{participantId};{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         socket.send_string(f"initial prompt conversation started;{participantId};{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         print("Sent message:", "conversation started")
 
+
         return {"status": "success", "detail": "Conversation started"}
+
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 @app.post("/start-conversation")
@@ -556,14 +646,19 @@ def start_conversation(participantId: str):
     socket.bind("tcp://localhost:12345")
     print("Publisher socket bound to tcp://localhost:12345")
 
+
     # message = "conversation started"
     socket.send_string(f"test")
+
 
     time.sleep(0.25)  # Allow time for subscribers to connect
     socket.send_string(f"conversation started;{participantId};{datetime.now().strftime('%Y%m%d_%H%M%S')}")
     print("Sent message:", "conversation started")
 
+
     return {"status": "success", "detail": "Conversation started"}
+
+
 
 
 @app.post("/end-conversation")
@@ -573,12 +668,16 @@ def end_conversation():
     socket.bind("tcp://localhost:12345")
     print("Publisher socket bound to tcp://localhost:12345")
 
+
     # message = "conversation started"
     socket.send_string(f"test")
+
 
     time.sleep(0.25)  # Allow time for subscribers to connect
     socket.send_string("conversation ended")
     print("Sent message:", "conversation ended")
+
+
 
 
 # Google Sheets
@@ -589,9 +688,11 @@ from pydantic import EmailStr
 from fastapi.responses import JSONResponse
 from typing import List, Dict, Any
 
+
 GS_CRED_PATH = os.path.join(BASE_DIR, "credentials.json")
 GS_FILE_NAME = "Test Sheet"
 GS_RANGE = "A:Z"
+
 
 def get_sheet(tab_name):
     try:
@@ -611,17 +712,20 @@ def get_sheet(tab_name):
         print("Error in get_sheet:", str(e))
         raise
 
+
 @app.get("/participantId")
 def get_participantId():
     try:
         ws = get_sheet("PreStudy")
         records = ws.get_all_records()
 
+
         row_count = len(records)+1
         return {"participantId": row_count}
     except Exception as e:
         print("Error in /participantId:", str(e))   # Add this
         raise HTTPException(status_code=500, detail=str(e))
+
 
 class PreStudySubmission(BaseModel):
     startTime: str
@@ -641,6 +745,7 @@ class PreStudySubmission(BaseModel):
     promptEngineeringExperience: str
     promptEngineeringConfidence: str
     promptEngineeringDescription: str
+
 
 @app.post("/prestudy")
 def post_prestudy(data: PreStudySubmission):
@@ -670,6 +775,7 @@ def post_prestudy(data: PreStudySubmission):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 class MainStudySubmission(BaseModel):
     participantId: str
     initialPromptAssistant_landingTime: str
@@ -683,6 +789,7 @@ class MainStudySubmission(BaseModel):
     endClicks: int
     numCycles: int
     satisfactionScore: List[str]
+
 
 @app.post("/main-study")
 def post_mainstudy(data: MainStudySubmission):
@@ -707,8 +814,10 @@ def post_mainstudy(data: MainStudySubmission):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
 from pydantic import Field
 from typing import Optional
+
 
 class PostStudySubmission(BaseModel):
     # Meta info
@@ -718,6 +827,7 @@ class PostStudySubmission(BaseModel):
     submissionTime: str
     timeTaken: str
 
+
     satisfied_final: str
     confident_final: str
     expectations: str
@@ -725,10 +835,12 @@ class PostStudySubmission(BaseModel):
     user_satisfied: str
     not_follow_design: str
 
+
     luna_easy: str
     luna_not_understand: str
     luna_enjoy: str
     luna_again: str
+
 
     ace_freq: str
     ace_complex: str
@@ -741,9 +853,11 @@ class PostStudySubmission(BaseModel):
     ace_confident: str
     ace_learnbefore: str
 
+
     class Config:
         allow_population_by_field_name = True
         
+
 
 @app.post("/poststudy")
 def post_poststudy(data: PostStudySubmission):
@@ -781,6 +895,7 @@ def post_poststudy(data: PostStudySubmission):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
     
 class CompensationSubmission(BaseModel):
     submissionTime: str
@@ -788,6 +903,7 @@ class CompensationSubmission(BaseModel):
     last: str
     email: str
     confirmEmail: str
+
 
 @app.post("/compensation")
 def post_compensation(data: CompensationSubmission):
@@ -807,6 +923,7 @@ def post_compensation(data: CompensationSubmission):
         print("Error in /compensation:", str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
+
 class SessionLog(BaseModel):
     participantId: str = ""
     prompt: str = ""
@@ -820,6 +937,7 @@ class SessionLog(BaseModel):
     allAnnotationSummaries: List[Dict[str, Any]] = []
     allAiSuggestedPrompts: List[Dict[str, Any]] = []
     satisfactionScore: List[str] = []
+
 
 @app.post("/session-log-condition1")
 async def save_session_log(log: SessionLog):
@@ -845,6 +963,8 @@ async def save_session_log(log: SessionLog):
         for idx, score in enumerate(log.satisfactionScore):
             f.write(f"  - Cycle {idx+1}: {score}\n")
     return JSONResponse({"status": "success", "file": log_file})
+
+
 
 
 @app.post("/session-log-condition2")
@@ -888,6 +1008,8 @@ async def save_session_log(log: SessionLog):
     return JSONResponse({"status": "success", "file": log_file})
 
 
+
+
 @app.post("/session-log-condition3")
 async def save_session_log(log: SessionLog):
     log_file = os.path.join(LOG_FOLDER, f"{log.participantId}_session.txt")
@@ -914,6 +1036,8 @@ async def save_session_log(log: SessionLog):
             prompt = entry.get("prompt", "")
             f.write(f"  - [{time}] {model}, {voice}: {prompt}\n")
     return JSONResponse({"status": "success", "file": log_file})
+
+
 
 
 @app.post("/session-log-experimental")
@@ -954,11 +1078,15 @@ async def save_session_log(log: SessionLog):
     return JSONResponse({"status": "success", "file": log_file})
 
 
+
+
 import openai
 import os
 from fastapi import FastAPI, HTTPException, Body
 
+
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 PROMPT_FILE = os.path.join(os.path.dirname(__file__), "openai_prompts.json")
 try:
@@ -968,6 +1096,7 @@ try:
 except Exception as e:
     print("Failed to load system prompt:", e)
     SYSTEM_PROMPT = ""  # Fallback
+
 
 @app.post("/generate-ai-prompt")
 async def generate_ai_prompt(data: dict = Body(...)):
@@ -990,6 +1119,7 @@ async def generate_ai_prompt(data: dict = Body(...)):
     except Exception as e:
         latest_prompt = ""
 
+
     if not editableSuggestions:
         raise HTTPException(status_code=400, detail="No user feedback provided.")
     if not OPENAI_API_KEY:
@@ -1011,10 +1141,12 @@ async def generate_ai_prompt(data: dict = Body(...)):
         print("OpenAI error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
+
 # @app.post("/start-child")
 # async def start_child():
 #     try:
 #         client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 
 #         response = client.chat.completions.create(
 #             model="gpt-4o-mini-2024-07-18",
@@ -1026,18 +1158,23 @@ async def generate_ai_prompt(data: dict = Body(...)):
 #             temperature=0.7,
 #         )
 
+
 #         child_message = response.choices[0].message.content.strip()
 #         return {"childResponse": child_message}
+
 
 #     except Exception as e:
 #         print("OpenAI error:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 # @app.post("/start-child")
 # async def start_child():
 #     try:
 #         client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 
 #         response = client.chat.completions.create(
 #             model="gpt-4o-mini-2024-07-18",
@@ -1056,18 +1193,23 @@ async def generate_ai_prompt(data: dict = Body(...)):
 #             temperature=0.8,
 #         )
 
+
 #         child_response = response.choices[0].message.content.strip()
 #         return {"childResponse": child_response}
+
 
 #     except Exception as e:
 #         print("OpenAI error:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 @app.post("/generate-scenario-prompt")
 async def generate_scenario_prompt(data: dict = Body(...)):
     # Get the user input from frontend
     user_prompt = data.get("userPrompt", "").strip()
+
 
     # Load latest baseline prompt from resources
     resource_dir = os.path.join(BASE_DIR, "../src/py_pubsub/resources")
@@ -1086,8 +1228,10 @@ async def generate_scenario_prompt(data: dict = Body(...)):
     except Exception as e:
         latest_prompt = ""
 
+
     # Combine user input with latest prompt
     combined_prompt = user_prompt + ("\n" + latest_prompt if latest_prompt else "")
+
 
     try:
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -1116,12 +1260,70 @@ async def generate_scenario_prompt(data: dict = Body(...)):
             temperature=0.7,
         )
 
+
         ai_prompt = response.choices[0].message.content.strip()
         return {"aiPrompt": ai_prompt}
+
 
     except Exception as e:
         print("OpenAI error:", e)
         raise HTTPException(status_code=500, detail=str(e))
+
+
+
+
+@app.post("/analyze-transcript")
+async def analyze_transcript(payload: dict = Body(...)):
+    """
+    Analyze a conversation transcript using OpenAI and return feedback for the parent.
+    Body: { "transcript": "..." }  If transcript missing, the endpoint will try to read latest transcript file.
+    """
+    transcript = payload.get("transcript", "")
+    if not transcript:
+        try:
+            files_name = "transcript_latest.txt"
+            latest_file = os.path.join(TRANSCRIPT_FOLDER, files_name)
+            with open(latest_file, "r", encoding="utf-8") as f:
+                transcript = f.read()
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to read latest transcript: {e}")
+
+
+    if not transcript:
+        raise HTTPException(status_code=400, detail="No transcript provided or available.")
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="OpenAI API key not set.")
+
+
+    # The analysis prompt requested by the UI
+    analysis_system_prompt = (
+        "Imagine you’re training a parent of a child with autism to use declarative language. "
+        "Declarative language is a communication style that involves making statements rather than giving commands or asking questions. "
+        "Instead of saying, \"Put your shoes on,\" you might say, \"I notice your shoes are by the door.\" "
+        "We transcribed conversations where the parent is practicing their declarative language in a scenario with their child. "
+        "Given the transcript, provide detailed feedback for the parent on how they could have improved in the conversation, and what they can do to improve in the future. "
+        "Point out specific examples in their conversation, and also generalize to overarching declarative language practices."
+    )
+
+
+    try:
+        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+        response = client.chat.completions.create(
+            model="gpt-4o-mini-2024-07-18",
+            messages=[
+                {"role": "system", "content": analysis_system_prompt},
+                {"role": "user", "content": transcript},
+            ],
+            max_tokens=2500,
+            temperature=0.7,
+        )
+        feedback = response.choices[0].message.content.strip()
+        print("feedback: ", feedback)
+        return {"feedback": feedback}
+    except Exception as e:
+        print("OpenAI error:", e)
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/generate-feedback-summary")
 async def generate_feedback_summary():
@@ -1162,20 +1364,25 @@ async def generate_feedback_summary():
         raise HTTPException(status_code=500, detail=str(e))
     
 
+
 # """
 # Install required packages:
 # pip install fastapi uvicorn pydantic
 
+
 # Run in mac:
 # uvicorn main:app --reload --port 8000
 
+
 # Run in ros:
 # USE_ROS=true uvicorn main:app --reload --port 8000
+
 
 # CURL format:
 # curl -X POST http://localhost:8000/update-prompts \
 #   -H "Content-Type: application/json" \
 #   -d '{"prompts": {"baseline": "This is a test."}}'
+
 
 # """
 # import zmq
@@ -1190,9 +1397,12 @@ async def generate_feedback_summary():
 # from fastapi.middleware.cors import CORSMiddleware
 # from fastapi.responses import PlainTextResponse
 
+
 # USE_ROS = os.getenv("USE_ROS", "false").lower() == "true"
 
+
 # app = FastAPI()
+
 
 # app.add_middleware(
 #     CORSMiddleware,
@@ -1202,28 +1412,37 @@ async def generate_feedback_summary():
 #     allow_headers=["*"],
 # )
 
+
 # BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 
 # STATIC_TXT_DIR = os.path.join(BASE_DIR, "../txt_files")
 # os.makedirs(STATIC_TXT_DIR, exist_ok=True)
 
+
 # TRANSCRIPT_FOLDER = os.path.join(BASE_DIR, "../txt_files/transcripts")
 # os.makedirs(TRANSCRIPT_FOLDER, exist_ok=True)
+
 
 # SAVE_FOLDER = os.path.join(BASE_DIR, "../txt_files/analysis_results")
 # os.makedirs(SAVE_FOLDER, exist_ok=True)
 
+
 # PROMPT_FOLDER = os.path.join(BASE_DIR, "../py")
 # app.mount("/txt_files", StaticFiles(directory=STATIC_TXT_DIR), name="txt_files")
+
 
 # LOG_FOLDER = os.path.join(BASE_DIR, "../txt_files/logs")
 # os.makedirs(LOG_FOLDER, exist_ok=True)
 
+
 # HISTORY_FOLDER = os.path.join(BASE_DIR, "../txt_files/history")
 # os.makedirs(HISTORY_FOLDER, exist_ok=True)
 
+
 # INITIAL_PROMPT_FOLDER = os.path.join(BASE_DIR, "../txt_files/initial_prompts")
 # os.makedirs(INITIAL_PROMPT_FOLDER, exist_ok=True)
+
 
 # import os
 # import shutil
@@ -1233,9 +1452,12 @@ async def generate_feedback_summary():
 # from fastapi import Body
 
 
+
+
 # SUBFOLDERS = ["analysis_results", "history", "initial_prompts", "logs", "transcripts"]
 # ARCHIVE_ROOT = os.path.join(STATIC_TXT_DIR, "archived")
 # os.makedirs(ARCHIVE_ROOT, exist_ok=True)
+
 
 # def _unique_archive_batch_dir(pid: str, date_str: str) -> str:
 #     """
@@ -1250,6 +1472,7 @@ async def generate_feedback_summary():
 #         n += 1
 #     return batch_dir
 
+
 # def _ensure_empty_dir(path: str):
 #     os.makedirs(path, exist_ok=True)
 #     # optional: drop a .gitkeep so empty dirs persist in git
@@ -1259,10 +1482,12 @@ async def generate_feedback_summary():
 #     except Exception:
 #         pass
 
+
 # @app.post("/start-child")
 # async def start_child():
 #     try:
 #         client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 
 #         # Prompt describing Sam
 #         sam_prompt = """
@@ -1277,9 +1502,11 @@ async def generate_feedback_summary():
 # Do not provide feedback on what kind of statement would have elicited a better response from you,
 # simply do not perform the task that is implied and say this in informal language.
 
+
 # Declarative language is a communication style that involves making statements rather than giving commands or asking questions.
 # Instead of saying, "Put your shoes on," you might say, "I notice your shoes are by the door."
 # """
+
 
 #         response = client.chat.completions.create(
 #             model="gpt-4o-mini-2024-07-18",
@@ -1292,12 +1519,15 @@ async def generate_feedback_summary():
 #             temperature=0.7,
 #         )
 
+
 #         robot_message = response.choices[0].message.content.strip()
 #         return {"robotMessage": robot_message}
+
 
 #     except Exception as e:
 #         print("OpenAI error:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
+
 
 # @app.post("/archive-study")
 # def archive_study(payload: Dict[str, Any] = Body(...)):
@@ -1310,15 +1540,19 @@ async def generate_feedback_summary():
 #     if not pid:
 #         return {"ok": False, "error": "Missing or invalid 'pid'."}
 
+
 #     # Use your preferred timezone for dating the archive
 #     date_str = datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat()
+
 
 #     # Make a unique batch folder for this archive
 #     batch_dir = _unique_archive_batch_dir(pid, date_str)
 #     os.makedirs(batch_dir, exist_ok=True)
 
+
 #     moved: List[Dict[str, str]] = []
 #     errors: List[Dict[str, str]] = []
+
 
 #     # 1) Move subfolders into the archive batch
 #     for name in SUBFOLDERS:
@@ -1336,6 +1570,7 @@ async def generate_feedback_summary():
 #         except Exception as e:
 #             errors.append({"folder": src, "error": str(e)})
 
+
 #     # 2) Recreate clean, empty subfolders for the next study
 #     recreated: List[str] = []
 #     for name in SUBFOLDERS:
@@ -1345,6 +1580,7 @@ async def generate_feedback_summary():
 #             recreated.append(fresh)
 #         except Exception as e:
 #             errors.append({"folder": fresh, "error": str(e)})
+
 
 #     return {
 #         "ok": True,
@@ -1358,12 +1594,16 @@ async def generate_feedback_summary():
 #     }
 
 
+
+
 # class PromptPayload(BaseModel):
 #     prompts: dict  # Should include "baseline", etc.
+
 
 # class SaveResultPayload(BaseModel):
 #     filename: str
 #     content: str
+
 
 # @app.post("/save-analysis")
 # def save_analysis(payload: SaveResultPayload):
@@ -1371,19 +1611,24 @@ async def generate_feedback_summary():
 #         # Optional: timestamped to avoid overwrites
 #         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
+
 #         # Ensure it's a clean filename
 #         safe_name = os.path.basename(payload.filename)
 #         if not safe_name.endswith(".txt"):
 #             safe_name += timestamp + ".txt"
 
+
 #         full_path = os.path.join(SAVE_FOLDER, f"{safe_name}")
+
 
 #         with open(full_path, "w", encoding="utf-8") as f:
 #             f.write(payload.content)
 
+
 #         return {"status": "success", "saved_to": full_path}
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
+
 
 # @app.post("/save-data")
 # def save_data(payload: SaveResultPayload):
@@ -1393,14 +1638,19 @@ async def generate_feedback_summary():
 #         if not safe_name.endswith(".txt"):
 #             safe_name += ".txt"
 
+
 #         full_path = os.path.join(ARCHIVE_ROOT, f"{safe_name}")
+
 
 #         with open(full_path, "w", encoding="utf-8") as f:
 #             f.write(payload.content)
 
+
 #         return {"status": "success", "saved_to": full_path}
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 # @app.get("/latest-transcript", response_class=PlainTextResponse)
@@ -1416,6 +1666,8 @@ async def generate_feedback_summary():
 #             return f.read()
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 # @app.get("/latest-transcript/stream")
@@ -1441,10 +1693,13 @@ async def generate_feedback_summary():
 #     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
+
+
 # @app.post("/rename-transcript")
 # def rename_transcript():
 #     try:
 #         latest_transcript = os.path.join(TRANSCRIPT_FOLDER, "transcript_latest.txt")
+
 
 #         if os.path.exists(latest_transcript):
 #             old_transcript = os.path.join(TRANSCRIPT_FOLDER, f"transcript_old_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt")
@@ -1468,10 +1723,12 @@ async def generate_feedback_summary():
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
 # # New endpoint to save initial prompt
 # from pydantic import BaseModel
 # class SaveInitialPromptRequest(BaseModel):
 #     content: str
+
 
 # @app.post("/save-initial-prompt")
 # def save_initial_prompt(payload: SaveInitialPromptRequest):
@@ -1492,8 +1749,10 @@ async def generate_feedback_summary():
 #         raise HTTPException(status_code=500, detail=str(e))
     
 
+
 # import asyncio
 # from fastapi.responses import StreamingResponse
+
 
 # # --- add anywhere after INITIAL_PROMPT_FOLDER is defined ---
 # @app.get("/initial-prompt/stream")
@@ -1519,6 +1778,7 @@ async def generate_feedback_summary():
 #             await asyncio.sleep(1)
 #     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
+
 # @app.post("/latest-prompt")
 # def latest_prompt(payload: PromptPayload):
 #     try:
@@ -1533,7 +1793,9 @@ async def generate_feedback_summary():
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
 # from typing import List
+
 
 # @app.get("/transcript-history")
 # def get_transcript_history(participantId: str):
@@ -1566,10 +1828,15 @@ async def generate_feedback_summary():
 #         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 # import glob
+
 
 # class SaveHistoryRequest(BaseModel):
 #     participantId: str
+
+
 
 
 # @app.post("/save-history")
@@ -1588,6 +1855,7 @@ async def generate_feedback_summary():
 #         with open(prompt_files[0], "r", encoding="utf-8") as f:
 #             prompt_data = json.load(f)
 
+
 #         # Get latest transcript file
 #         transcript_files = sorted(
 #             glob.glob(os.path.join(TRANSCRIPT_FOLDER, "*.txt")),
@@ -1598,6 +1866,7 @@ async def generate_feedback_summary():
 #             raise Exception("No transcript files found.")
 #         with open(transcript_files[0], "r", encoding="utf-8") as f:
 #             transcript_content = f.read()
+
 
 #         # Get latest analysis_result file (annotations)
 #         analysis_files = sorted(
@@ -1614,10 +1883,12 @@ async def generate_feedback_summary():
 #             except Exception:
 #                 analysis_content = None
 
+
 #         # Prepare JSON structure
 #         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 #         history_filename = f"{participantId}_{timestamp}.json"
 #         history_path = os.path.join(HISTORY_FOLDER, history_filename)
+
 
 #         history_json = {
 #             "participantId": participantId,
@@ -1627,12 +1898,16 @@ async def generate_feedback_summary():
 #             "annotations": analysis_content
 #         }
 
+
 #         with open(history_path, "w", encoding="utf-8") as f:
 #             json.dump(history_json, f, indent=2, ensure_ascii=False)
+
 
 #         return {"status": "success", "file": history_filename}
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 # @app.post("/start-initial-prompt-conversation")
@@ -1652,6 +1927,7 @@ async def generate_feedback_summary():
 #         'voice': 'en-US-Chirp-HD-D'
 #     }
 
+
 #     try:
 #         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 #         filename = f"prompts_{timestamp}.json"
@@ -1661,23 +1937,30 @@ async def generate_feedback_summary():
 #         with open(full_path, "w", encoding="utf-8") as f:
 #             json.dump(prompts, f, indent=2)
 
+
 #         context = zmq.Context()
 #         socket = context.socket(zmq.PUB)
 #         socket.bind("tcp://localhost:12345")
 #         print("Publisher socket bound to tcp://localhost:12345")
 
+
 #         # message = "conversation started"
 #         socket.send_string(f"test")
+
 
 #         time.sleep(0.25)  # Allow time for subscribers to connect
 #         # socket.send_string(f"initial prompt conversation started;{participantId};{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 #         socket.send_string(f"initial prompt conversation started;{participantId};{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 #         print("Sent message:", "conversation started")
 
+
 #         return {"status": "success", "detail": "Conversation started"}
+
 
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
+
+
 
 
 # @app.post("/start-conversation")
@@ -1688,14 +1971,19 @@ async def generate_feedback_summary():
 #     socket.bind("tcp://localhost:12345")
 #     print("Publisher socket bound to tcp://localhost:12345")
 
+
 #     # message = "conversation started"
 #     socket.send_string(f"test")
+
 
 #     time.sleep(0.25)  # Allow time for subscribers to connect
 #     socket.send_string(f"conversation started;{participantId};{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 #     print("Sent message:", "conversation started")
 
+
 #     return {"status": "success", "detail": "Conversation started"}
+
+
 
 
 # @app.post("/end-conversation")
@@ -1705,12 +1993,16 @@ async def generate_feedback_summary():
 #     socket.bind("tcp://localhost:12345")
 #     print("Publisher socket bound to tcp://localhost:12345")
 
+
 #     # message = "conversation started"
 #     socket.send_string(f"test")
+
 
 #     time.sleep(0.25)  # Allow time for subscribers to connect
 #     socket.send_string("conversation ended")
 #     print("Sent message:", "conversation ended")
+
+
 
 
 # # Google Sheets
@@ -1721,9 +2013,11 @@ async def generate_feedback_summary():
 # from fastapi.responses import JSONResponse
 # from typing import List, Dict, Any
 
+
 # GS_CRED_PATH = os.path.join(BASE_DIR, "credentials.json")
 # GS_FILE_NAME = "Test Sheet"
 # GS_RANGE = "A:Z"
+
 
 # def get_sheet(tab_name):
 #     try:
@@ -1743,17 +2037,20 @@ async def generate_feedback_summary():
 #         print("Error in get_sheet:", str(e))
 #         raise
 
+
 # @app.get("/participantId")
 # def get_participantId():
 #     try:
 #         ws = get_sheet("PreStudy")
 #         records = ws.get_all_records()
 
+
 #         row_count = len(records)+1
 #         return {"participantId": row_count}
 #     except Exception as e:
 #         print("Error in /participantId:", str(e))   # Add this
 #         raise HTTPException(status_code=500, detail=str(e))
+
 
 # class PreStudySubmission(BaseModel):
 #     startTime: str
@@ -1773,6 +2070,7 @@ async def generate_feedback_summary():
 #     promptEngineeringExperience: str
 #     promptEngineeringConfidence: str
 #     promptEngineeringDescription: str
+
 
 # @app.post("/prestudy")
 # def post_prestudy(data: PreStudySubmission):
@@ -1802,6 +2100,7 @@ async def generate_feedback_summary():
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
 # class MainStudySubmission(BaseModel):
 #     participantId: str
 #     initialPromptAssistant_landingTime: str
@@ -1815,6 +2114,7 @@ async def generate_feedback_summary():
 #     endClicks: int
 #     numCycles: int
 #     satisfactionScore: List[str]
+
 
 # @app.post("/main-study")
 # def post_mainstudy(data: MainStudySubmission):
@@ -1839,8 +2139,10 @@ async def generate_feedback_summary():
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
 # from pydantic import Field
 # from typing import Optional
+
 
 # class PostStudySubmission(BaseModel):
 #     # Meta info
@@ -1850,6 +2152,7 @@ async def generate_feedback_summary():
 #     submissionTime: str
 #     timeTaken: str
 
+
 #     satisfied_final: str
 #     confident_final: str
 #     expectations: str
@@ -1857,10 +2160,12 @@ async def generate_feedback_summary():
 #     user_satisfied: str
 #     not_follow_design: str
 
+
 #     luna_easy: str
 #     luna_not_understand: str
 #     luna_enjoy: str
 #     luna_again: str
+
 
 #     ace_freq: str
 #     ace_complex: str
@@ -1873,9 +2178,11 @@ async def generate_feedback_summary():
 #     ace_confident: str
 #     ace_learnbefore: str
 
+
 #     class Config:
 #         allow_population_by_field_name = True
         
+
 
 # @app.post("/poststudy")
 # def post_poststudy(data: PostStudySubmission):
@@ -1913,6 +2220,7 @@ async def generate_feedback_summary():
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
     
 # class CompensationSubmission(BaseModel):
 #     submissionTime: str
@@ -1920,6 +2228,7 @@ async def generate_feedback_summary():
 #     last: str
 #     email: str
 #     confirmEmail: str
+
 
 # @app.post("/compensation")
 # def post_compensation(data: CompensationSubmission):
@@ -1939,6 +2248,7 @@ async def generate_feedback_summary():
 #         print("Error in /compensation:", str(e))
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
 # class SessionLog(BaseModel):
 #     participantId: str = ""
 #     prompt: str = ""
@@ -1952,6 +2262,7 @@ async def generate_feedback_summary():
 #     allAnnotationSummaries: List[Dict[str, Any]] = []
 #     allAiSuggestedPrompts: List[Dict[str, Any]] = []
 #     satisfactionScore: List[str] = []
+
 
 # @app.post("/session-log-condition1")
 # async def save_session_log(log: SessionLog):
@@ -1977,6 +2288,8 @@ async def generate_feedback_summary():
 #         for idx, score in enumerate(log.satisfactionScore):
 #             f.write(f"  - Cycle {idx+1}: {score}\n")
 #     return JSONResponse({"status": "success", "file": log_file})
+
+
 
 
 # @app.post("/session-log-condition2")
@@ -2020,6 +2333,8 @@ async def generate_feedback_summary():
 #     return JSONResponse({"status": "success", "file": log_file})
 
 
+
+
 # @app.post("/session-log-condition3")
 # async def save_session_log(log: SessionLog):
 #     log_file = os.path.join(LOG_FOLDER, f"{log.participantId}_session.txt")
@@ -2046,6 +2361,8 @@ async def generate_feedback_summary():
 #             prompt = entry.get("prompt", "")
 #             f.write(f"  - [{time}] {model}, {voice}: {prompt}\n")
 #     return JSONResponse({"status": "success", "file": log_file})
+
+
 
 
 # @app.post("/session-log-experimental")
@@ -2086,11 +2403,15 @@ async def generate_feedback_summary():
 #     return JSONResponse({"status": "success", "file": log_file})
 
 
+
+
 # import openai
 # import os
 # from fastapi import FastAPI, HTTPException, Body
 
+
 # OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+
 
 # PROMPT_FILE = os.path.join(os.path.dirname(__file__), "openai_prompts.json")
 # try:
@@ -2100,6 +2421,7 @@ async def generate_feedback_summary():
 # except Exception as e:
 #     print("Failed to load system prompt:", e)
 #     SYSTEM_PROMPT = ""  # Fallback
+
 
 # @app.post("/generate-ai-prompt")
 # async def generate_ai_prompt(data: dict = Body(...)):
@@ -2122,6 +2444,7 @@ async def generate_feedback_summary():
 #     except Exception as e:
 #         latest_prompt = ""
 
+
 #     if not editableSuggestions:
 #         raise HTTPException(status_code=400, detail="No user feedback provided.")
 #     if not OPENAI_API_KEY:
@@ -2143,10 +2466,12 @@ async def generate_feedback_summary():
 #         print("OpenAI error:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
 
+
 # # @app.post("/start-child")
 # # async def start_child():
 # #     try:
 # #         client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 
 # #         response = client.chat.completions.create(
 # #             model="gpt-4o-mini-2024-07-18",
@@ -2158,18 +2483,23 @@ async def generate_feedback_summary():
 # #             temperature=0.7,
 # #         )
 
+
 # #         child_message = response.choices[0].message.content.strip()
 # #         return {"childResponse": child_message}
+
 
 # #     except Exception as e:
 # #         print("OpenAI error:", e)
 # #         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 # # @app.post("/start-child")
 # # async def start_child():
 # #     try:
 # #         client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 
 # #         response = client.chat.completions.create(
 # #             model="gpt-4o-mini-2024-07-18",
@@ -2188,18 +2518,23 @@ async def generate_feedback_summary():
 # #             temperature=0.8,
 # #         )
 
+
 # #         child_response = response.choices[0].message.content.strip()
 # #         return {"childResponse": child_response}
+
 
 # #     except Exception as e:
 # #         print("OpenAI error:", e)
 # #         raise HTTPException(status_code=500, detail=str(e))
 
 
+
+
 # @app.post("/generate-scenario-prompt")
 # async def generate_scenario_prompt(data: dict = Body(...)):
 #     # Get the user input from frontend
 #     user_prompt = data.get("userPrompt", "").strip()
+
 
 #     # Load latest baseline prompt from resources
 #     resource_dir = os.path.join(BASE_DIR, "../src/py_pubsub/resources")
@@ -2218,8 +2553,10 @@ async def generate_feedback_summary():
 #     except Exception as e:
 #         latest_prompt = ""
 
+
 #     # Combine user input with latest prompt
 #     combined_prompt = user_prompt + ("\n" + latest_prompt if latest_prompt else "")
+
 
 #     try:
 #         client = openai.OpenAI(api_key=OPENAI_API_KEY)
@@ -2248,12 +2585,15 @@ async def generate_feedback_summary():
 #             temperature=0.7,
 #         )
 
+
 #         ai_prompt = response.choices[0].message.content.strip()
 #         return {"aiPrompt": ai_prompt}
+
 
 #     except Exception as e:
 #         print("OpenAI error:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
+
 
 # @app.post("/generate-feedback-summary")
 # async def generate_feedback_summary():
@@ -2271,6 +2611,7 @@ async def generate_feedback_summary():
 #             annotations = f.read()
 #     except Exception as e:
 #         raise HTTPException(status_code=500, detail=f"Failed to read analysis result: {e}")
+
 
 #     if not annotations:
 #         raise HTTPException(status_code=400, detail="No user feedback provided.")
@@ -2293,3 +2634,8 @@ async def generate_feedback_summary():
 #         print("OpenAI error:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
     
+
+
+
+
+
