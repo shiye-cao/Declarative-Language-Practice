@@ -299,8 +299,16 @@ class RobotBehaviorGenerator(Node):
             self.publish_thinking_status()
             system_prompt = self.prompt + "Always provide a response in valid JSON format. Output Format: You must return a structured JSON object with the following keys: {  \"robotTalk\": \"TRUE\", \"robotBehavior\": [ { \"robotSpeechContent\": \"Segmented speech content here.\", \"robotFacialExpression\": \"neutral | satisfied | happy | surprised | interested | excited\", \"robotHeadOrientation\": \"lookAtUser | nod | doubleNod\" }, ... ], \"robotFullSpeechContent\": \"Complete response content here.\"} \n Rules: 1) Do not include triple backticks (json … ). 2) Always set \"robotTalk\": \"TRUE\" if a response is being delivered. 3) Include at least one entry in the \"robotBehavior\" list for each thinking or speaking segment. 4) The \"robotFullSpeechContent\" must contain the complete speech output, matching the content of all robotSpeechContent values concatenated in order. 5) Each robotBehavior segment must contain: - \"robotSpeechContent\": a portion of Luna’s response. - \"robotFacialExpression\": one of the six allowed expressions based on context. - \"robotHeadOrientation\": one of the three allowed head orientations based on context. \n Facial Expression Options (choose one per segment): \"neutral\", \"satisfied\", \"happy\", \"surprised\", \"interested\", \"excited\". Head Orientation Options (choose one per segment):\"lookAtUser\", \"nod\", \"doubleNod\"."
 
+        model_choose = {
+            "gpt-4o":"gpt-4o-2024-05-13",
+            "gpt-4o-mini": "gpt-4o-mini-2024-07-18",
+            "gpt-4.1-mini": "gpt-4.1-mini-2025-04-14"
+        }
+
         model_type = self.prompts.get("model", "gpt-4.1-mini")
 
+
+        model_to_use = "gpt-4.1-mini-2025-04-14"
         temperature = 0.5
 
         self.get_logger().info(f"Model to use: {model_to_use}")
