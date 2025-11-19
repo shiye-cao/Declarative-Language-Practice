@@ -979,27 +979,27 @@ async def generate_ai_prompt(data: dict = Body(...)):
         print("OpenAI error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/start-child")
-async def start_child():
-    try:
-        client = openai.OpenAI(api_key=OPENAI_API_KEY)
+# @app.post("/start-child")
+# async def start_child():
+#     try:
+#         client = openai.OpenAI(api_key=OPENAI_API_KEY)
 
-        response = client.chat.completions.create(
-            model="gpt-4o-mini-2024-07-18",
-            messages=[
-                {"role": "system", "content": "Pretend to be a 6-year-old child named Sam."},
-                {"role": "user", "content": "pretend to be a child"}
-            ],
-            max_tokens=200,
-            temperature=0.7,
-        )
+#         response = client.chat.completions.create(
+#             model="gpt-4o-mini-2024-07-18",
+#             messages=[
+#                 {"role": "system", "content": "Pretend to be a 6-year-old child named Sam."},
+#                 {"role": "user", "content": "pretend to be a child"}
+#             ],
+#             max_tokens=200,
+#             temperature=0.7,
+#         )
 
-        child_message = response.choices[0].message.content.strip()
-        return {"childResponse": child_message}
+#         child_message = response.choices[0].message.content.strip()
+#         return {"childResponse": child_message}
 
-    except Exception as e:
-        print("OpenAI error:", e)
-        raise HTTPException(status_code=500, detail=str(e))
+#     except Exception as e:
+#         print("OpenAI error:", e)
+#         raise HTTPException(status_code=500, detail=str(e))
 
 
 # @app.post("/start-child")
