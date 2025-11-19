@@ -10,6 +10,7 @@ const RobotInteraction: React.FC = () => {
   const [showGenerator, setShowGenerator] = useState<boolean>(false)
   const [generatorInput, setGeneratorInput] = useState<string>('')
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
+  //const [childStatus, setChildStatus] = useState("")
   //const [generatedPrompt, setGeneratedPrompt] = useState("");
   //const [isGenerating, setIsGenerating] = useState(false);
   
@@ -22,6 +23,31 @@ const RobotInteraction: React.FC = () => {
   const toggleScenario = (n: number) => {
     setSelectedScenario(prev => (prev === n ? null : n))
   }
+
+//   const handleStartLearning = async () => {
+//   try {
+//     setChildStatus("Child listening...");
+
+//     const res = await fetch("http://localhost:8000/start-child", {
+//       method: "POST",
+//       headers: { "Content-Type": "application/json" },
+//       body: JSON.stringify({}),
+//     });
+
+//     if (!res.ok) throw new Error("Failed to start child mode");
+//     const data = await res.json();
+
+//     // Optional: show child’s first response
+//     if (data.childResponse) {
+//       setChildStatus(`Child listening: "${data.childResponse}"`);
+//     }
+//   } catch (err) {
+//     console.error(err);
+//     alert("Error starting child mode");
+//     setChildStatus("");
+//   }
+// };
+
 
     const handleGenerateScenarioPrompt = async () => {
 
@@ -40,6 +66,7 @@ const RobotInteraction: React.FC = () => {
       console.error(err);
     }
   };
+  //{childStatus && <p className="text-green-600 mt-2">{childStatus}</p>}
 
   return (
     <div className="min-h-screen p-10 bg-white max-w-5xl mx-auto flex flex-col">
@@ -198,7 +225,7 @@ const RobotInteraction: React.FC = () => {
             {/* Bottom: Learning Buttons */}
       <div className="flex justify-center gap-4 mt-auto">
         <button
-          onClick={() => {/* Add start learning logic here */}}
+          //onClick={handleStartLearning}
           className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
         >
           Start Learning

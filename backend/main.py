@@ -939,43 +939,35 @@ async def generate_ai_prompt(data: dict = Body(...)):
         print("OpenAI error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-# @app.post("/generate-scenario-prompt")
-# async def generate_scenario_prompt(data: dict = Body(...)):
-#     editableSuggestions = data.get("editableSuggestions", "")
-#     # Get latest prompt and append to editableSuggestions
-#     resource_dir = os.path.join(BASE_DIR, "../src/py_pubsub/resources")
-#     try:
-#         prompt_files = sorted(
-#             glob.glob(os.path.join(resource_dir, "prompts_*.json")),
-#             key=os.path.getmtime,
-#             reverse=True
-#         )
-#         if prompt_files:
-#             with open(prompt_files[0], "r", encoding="utf-8") as f:
-#                 prompt_data = json.load(f)
-#             # Use the baseline prompt if available, else the whole dict as string
-#             latest_prompt = prompt_data.get("baseline") or json.dumps(prompt_data)
-#         else:
-#             latest_prompt = ""
-#     except Exception as e:
-#         latest_prompt = ""
-
+# @app.post("/start-child")
+# async def start_child():
 #     try:
 #         client = openai.OpenAI(api_key=OPENAI_API_KEY)
+
 #         response = client.chat.completions.create(
 #             model="gpt-4o-mini-2024-07-18",
 #             messages=[
-#                 {"role": "system", "content": "You're trying to coach a parent of a child with autism, Sam, on how to speak to Sam effectively using declarative language by giving them detailed scenarios. In these scenarios, we want to give enough details and describe the setting (place, time, people) enough for Sam's parent to be able to engage in conversation with enough context. We have many prompts already generated, but also need to generate more prompts that allow the parent to practice talking with Sam. If given an overarching idea, dive into more detail and create a comprehensive prompt. If not given any extra information or given information that is nonsense or unrelated to a scenario, generate a new scenario that is realistic for a 6-year old child and their parent. Do not give any other information, only provide the prompt. At the end of describing the setting, give Sam's parent the space to say something to Sam. That way, they can begin the conversation. Do not suggest something for the parent to say."},
-#                 {"role": "user", "content": editableSuggestions + ("\n" + latest_prompt if latest_prompt else "")}
+#                 {
+#                     "role": "system",
+#                     "content": (
+#                         "You are now pretending to be a 6-year-old child named Sam. "
+#                         "You respond like a real child—simple sentences, playful, distracted, curious. "
+#                         "Do not explain what you’re doing, just act like Sam."
+#                     )
+#                 },
+#                 {"role": "user", "content": "Hi Sam! I'm here to talk with you."}
 #             ],
-#             max_tokens=2500,
-#             temperature=0.7,
+#             max_tokens=200,
+#             temperature=0.8,
 #         )
-#         ai_prompt = response.choices[0].message.content.strip()
-#         return {"aiPrompt": ai_prompt}
+
+#         child_response = response.choices[0].message.content.strip()
+#         return {"childResponse": child_response}
+
 #     except Exception as e:
 #         print("OpenAI error:", e)
 #         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.post("/generate-scenario-prompt")
 async def generate_scenario_prompt(data: dict = Body(...)):
