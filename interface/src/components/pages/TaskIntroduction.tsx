@@ -1,13 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import FeedbackPrompt from '../FeedbackPrompt'
 
-interface AIFeedbackPromptProps {
-
-}
-
-const AIFeedbackPrompt = ({
-
-}: AIFeedbackPromptProps) => {
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   //const feedbackProcessed = userFeedback.trim().length > 0;
@@ -27,7 +21,6 @@ const AIFeedbackPrompt = ({
       });
       if (!res.ok) throw new Error("Failed to generate prompt");
       const data = await res.json();
-      console.log("made it here");
       setGeneratedPrompt(data.aiPrompt || "");
     } catch (err) {
       setGeneratedPrompt("");
@@ -37,7 +30,6 @@ const AIFeedbackPrompt = ({
       setIsGenerating(false);
     }
   };
-}
 
 const RobotInteraction: React.FC = () => {
   const navigate = useNavigate()
@@ -45,7 +37,6 @@ const RobotInteraction: React.FC = () => {
   const [showGenerator, setShowGenerator] = useState<boolean>(false)
   const [generatorInput, setGeneratorInput] = useState<string>('')
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null)
-  const [isGenerating, setIsGenerating] = useState<boolean>(false)
   
 
   const scenarioDescriptions: Record<number, string> = {
@@ -56,6 +47,24 @@ const RobotInteraction: React.FC = () => {
   const toggleScenario = (n: number) => {
     setSelectedScenario(prev => (prev === n ? null : n))
   }
+
+    const handleGenerateScenarioPrompt = async () => {
+
+    try {
+      const res = await fetch("http://localhost:8000/generate-scenario-prompt", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({userPrompt: generatorInput}),
+      });
+      if (!res.ok) throw new Error("Failed to generate prompt");
+      const data = await res.json();
+      setGeneratedPrompt(data.aiPrompt || "");
+    } catch (err) {
+      setGeneratedPrompt("");
+      alert("Failed to generate AI prompt.");
+      console.error(err);
+    }
+  };
 
   return (
     <div className="min-h-screen p-10 bg-white max-w-5xl mx-auto flex flex-col">
@@ -240,8 +249,15 @@ const RobotInteraction: React.FC = () => {
         </div>
       </section>
 
-      {/* Bottom: Done Learning Button */}
-      <div className="flex justify-center mt-auto">
+
+            {/* Bottom: Learning Buttons */}
+      <div className="flex justify-center gap-4 mt-auto">
+        <button
+          onClick={() => {/* Add start learning logic here */}}
+          className="px-6 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition"
+        >
+          Start Learning
+        </button>
         <button
           onClick={() => navigate('/feedback')}
           className="px-6 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
