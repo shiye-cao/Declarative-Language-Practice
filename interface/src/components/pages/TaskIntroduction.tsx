@@ -14,7 +14,8 @@ const RobotInteraction: React.FC = () => {
   //const [childMessage, setChildMessage] = useState(""); // <-- NEW
   //const [childStatus, setChildStatus] = useState("")
   //const [generatedPrompt, setGeneratedPrompt] = useState("");
-  //const [isGenerating, setIsGenerating] = useState(false);
+  // const [isGenerating, setIsGenerating] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [status, setStatus] = useState("");           // shows "Child listening..."
   const [robotMessage, setRobotMessage] = useState(""); // shows response from Sam
   
@@ -78,6 +79,7 @@ const RobotInteraction: React.FC = () => {
 
     const handleGenerateScenarioPrompt = async () => {
 
+    setIsGenerating(true);
     try {
       const res = await fetch("http://localhost:8000/generate-scenario-prompt", {
         method: "POST",
@@ -91,6 +93,8 @@ const RobotInteraction: React.FC = () => {
       setGeneratedPrompt("");
       alert("Failed to generate AI prompt.");
       console.error(err);
+    } finally {
+      setIsGenerating(false);
     }
   };
   //{childStatus && <p className="text-green-600 mt-2">{childStatus}</p>}
@@ -208,10 +212,11 @@ const RobotInteraction: React.FC = () => {
                       // Hard-coded generation result for now
                       //setGeneratedPrompt('It’s early Saturday morning, and you and Sam are in the kitchen getting ready to bake cookies together. The sun is shining through the window, and you can hear birds chirping outside. The counters are all clean, and all the ingredients—flour, sugar, eggs, butter, chocolate chips—are laid out in front of you. Sam has been looking forward to this because they love chocolate chip cookies, and you want to make sure everything goes smoothly so Sam stays calm and happy during the activity. You notice Sam is quietly watching you measure the flour.')
                     }}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 transition text-sm"
+                    className={`px-4 py-2 text-white rounded transition text-sm ${isGenerating ? 'bg-indigo-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700'}`}
                     aria-label="Generate prompt"
+                    disabled={isGenerating}
                   >
-                    Generate
+                    {isGenerating ? 'Generating...' : 'Generate'}
                   </button>
 
                   <button

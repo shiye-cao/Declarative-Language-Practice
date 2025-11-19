@@ -104,7 +104,7 @@ class GoogleTextToSpeechNode(Node):
     def _setup_speech_synthesizer(self) -> None:
         """Set up Google Cloud Text-to-Speech client and configuration."""
         self.client = texttospeech.TextToSpeechClient()
-        voice_name = self.load_latest_voice_name()  # Load the latest voice name
+        voice_name = "en-US-Standard-B"  # Load the latest voice name
         self.voice = texttospeech.VoiceSelectionParams(
             language_code="en-US",
             # name="en-US-Neural2-D",  # Default voice
