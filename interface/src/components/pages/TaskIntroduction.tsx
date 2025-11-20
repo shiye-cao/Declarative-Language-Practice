@@ -235,7 +235,7 @@ return (
           aria-pressed={selectedScenario === 1}
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Scenario 1</h3>
+            <h3 className="text-lg font-medium">School Morning</h3>
             <button
               className={`px-3 py-1 rounded text-sm ${selectedScenario === 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               onClick={(e) => { e.stopPropagation(); toggleScenario(1) }}
@@ -264,7 +264,7 @@ return (
           aria-pressed={selectedScenario === 2}
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Scenario 2</h3>
+            <h3 className="text-lg font-medium">Family Visitor</h3>
             <button
               className={`px-3 py-1 rounded text-sm ${selectedScenario === 2 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               onClick={(e) => { e.stopPropagation(); toggleScenario(2) }}
