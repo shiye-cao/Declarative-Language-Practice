@@ -27,7 +27,7 @@ class AudioConfig:
     """Audio configuration constants."""
     STREAMING_LIMIT = 240000  # 4 minutes in milliseconds
     SAMPLE_RATE = 48000
-    CHUNK_SIZE = int(SAMPLE_RATE // 5)
+    CHUNK_SIZE = int(SAMPLE_RATE // 4)
     DEVICE_NAME = "TKGOU PnP USB Microphone" # Microphone device
     # DEVICE_NAME = 3
     CREDENTIALS_PATH = "/home/icl/2026-hri-conversation-design-experimental/google-credentials.json"

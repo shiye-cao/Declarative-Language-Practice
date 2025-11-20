@@ -293,7 +293,7 @@ return (
           aria-pressed={showGenerator}
         >
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-medium">Generate new prompt</h3>
+            <h3 className="text-lg font-medium">Generate new scenario</h3>
             <button
               className={`px-3 py-1 rounded text-sm ${showGenerator ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
               onClick={(e) => { e.stopPropagation(); setShowGenerator(prev => !prev); setSelectedScenario(prev => prev === 3 ? null : 3) }}

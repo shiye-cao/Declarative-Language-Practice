@@ -1303,6 +1303,7 @@ async def analyze_transcript(payload: dict = Body(...)):
         "We transcribed conversations where the parent is practicing their declarative language in a scenario with their child. "
         "Given the transcript, provide detailed feedback for the parent on how they could have improved in the conversation, and what they can do to improve in the future. "
         "Point out specific examples in their conversation, and also generalize to overarching declarative language practices."
+        "Do not include headers and subheaders and special symbols."
     )
 
 
