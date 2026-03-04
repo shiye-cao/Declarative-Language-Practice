@@ -43,7 +43,7 @@ const PreStudyQuestionnnaire: React.FC = () => {
         </button>
         <button
           className="px-6 py-3 bg-gray-600 text-white rounded hover:bg-gray-700"
-          onClick={() => navigate('/intro')}
+          onClick={() => navigate('/select-scenario')}
         >
           Practice Speaking
         </button>
