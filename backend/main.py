@@ -1232,6 +1232,8 @@ async def generate_scenario_prompt(data: dict = Body(...)):
     # Combine user input with latest prompt
     combined_prompt = user_prompt + ("\n" + latest_prompt if latest_prompt else "")
 
+    if not OPENAI_API_KEY:
+        raise HTTPException(status_code=500, detail="OpenAI API key not set.")
 
     try:
         client = openai.OpenAI(api_key=OPENAI_API_KEY)
