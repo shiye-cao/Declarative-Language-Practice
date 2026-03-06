@@ -5,6 +5,7 @@ import PreStudyQuestionnaire from './components/pages/PreStudyQuestionnnaire'
 import SelectScenario from './components/pages/SelectScenario'
 import TaskIntroduction from './components/pages/TaskIntroduction'
 import InterfaceIntroduction from './components/pages/InterfaceIntroduction'
+import Characteristics from "./components/pages/Characteristics"
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
       <Route path='/select-scenario' element={<SelectScenario />}/>
       <Route path='/interface' element={<InterfaceIntroduction />}/>
       <Route path='/intro' element={<TaskIntroduction />}/>
+      <Route path="/characteristics" element={<Characteristics />} />
     </Routes>
     </>
   )

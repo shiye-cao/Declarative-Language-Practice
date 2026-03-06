@@ -15,8 +15,8 @@ const RobotInteraction: React.FC = () => {
   const [feedbackLoading, setFeedbackLoading] = useState(false);
 
   const scenarioDescriptions: Record<number, string> = {
-    1: 'Scenario 1: The school bus is coming in 10 minutes. Sam\'s backpack is still unpacked. The books are sitting on the table, along with Sam\'s lunchbox. Sam also needs to put on his/her shoes and jacket before you both walk out to the bus stop.',
-    2: 'Scenario 2: Sam\'s Grandma has just arrived for a visit. Grandma wants a hug from Sam. You and Sam also prepared some gifts for Grandma, a bouquet of flowers and a box of brownies, that you want Sam to give to her. '
+    1: 'Scenario 1: Imagine you and the child (represented by the robot) are playing with toys. Slowly transition the playtime to clean-up time. The child may be resistant to stopping playtime and transitioning to playtime. Use transition cues and practice patience.',
+    2: 'Scenario 2: Imagine the child (represented by the robot) is playing with a toy. After you express interest in sharing the toy, the robot is reluctant to share. The child becomes frustrated and uses repetitive phrases. Practice patient, clear, language cues for sharing, de-escalation, and positive reinforcement.'
   }
 
   const getSelectedScenarioText = (): string => {
